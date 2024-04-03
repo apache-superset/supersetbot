@@ -22,13 +22,23 @@ import getCLI from './cli.js';
 import Context from './context.js';
 import Github from './github.js';
 
-async function runCommandFromGithubAction(rawCommand) {
+export async function runCommandFromGithubAction(rawCommand) {
+
+  // Trimming the command
+  let cmd = rawCommand.trim();
+  if (cmd.startsWith('\\@')) {
+    cmd.replace('\\@', '@');
+  }
+  if (!cmd.startsWith('@supersetbot')) {
+    sys.exit(1);
+  }
+
   const context = new Context('GHA');
   const cli = getCLI(context);
   const github = new Github(context);
 
   // Make rawCommand look like argv
-  const cmd = rawCommand.trim().replace('@supersetbot', 'supersetbot');
+  cmd = cmd.replace('@supersetbot', 'supersetbot');
   const args = context.parseArgs(cmd);
 
   await cli.parseAsync(['node', ...args]);
@@ -40,7 +50,7 @@ async function runCommandFromGithubAction(rawCommand) {
 const envContext = new Context('CLI');
 const cli = getCLI(envContext);
 cli.command('run <command>')
-  .description('Run a command from Github Action').action((command) => runCommandFromGithubAction(command));
-
+  .description('Run a command from Github Action')
+  .action((command) => runCommandFromGithubAction(command));
 
 cli.parse();
