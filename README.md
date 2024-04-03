@@ -1,5 +1,8 @@
 # supersetbot
 
+<img width="300" alt="Screenshot 2024-04-02 at 11 03 46 PM" src="https://github.com/apache-superset/supersetbot/assets/487433/c3eb1414-f760-48d3-8a69-c99788247966">
+
+
 supersetbot is a utility bot that can be used to help around GitHub, CI and beyond.
 
 The bot can be used as a local CLI OR, for a subset of fitted use cases, can be invoked directly
