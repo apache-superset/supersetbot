@@ -27,7 +27,7 @@ export async function runCommandFromGithubAction(rawCommand) {
   // Trimming the command
   let cmd = rawCommand.trim();
   if (cmd.startsWith('\\@')) {
-    cmd.replace('\\@', '@');
+    cmd = cmd.replace('\\@', '@');
   }
   if (!cmd.startsWith('@supersetbot')) {
     console.error("ERROR: command should start with '@supersetbot'");
