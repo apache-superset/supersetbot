@@ -30,7 +30,8 @@ export async function runCommandFromGithubAction(rawCommand) {
     cmd.replace('\\@', '@');
   }
   if (!cmd.startsWith('@supersetbot')) {
-    sys.exit(1);
+    console.error("ERROR: command should start with '@supersetbot'");
+    process.exit(1);
   }
 
   const context = new Context('GHA');
