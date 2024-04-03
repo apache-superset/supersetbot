@@ -55,6 +55,15 @@ export default function getCLI(context) {
       await github.unlabel(opts.issue, label, context, opts.actor, opts.verbose, opts.dryRun);
     });
 
+  program.command('orglabel')
+    .description('Add an org label based on the author')
+    .addOption(issueOption)
+    .action(async function () {
+      const opts = context.processOptions(this, ['issue', 'repo']);
+      const github = new Github({ context, issueNumber: opts.issue });
+      await github.assignOrgLabel(opts.issue, opts.verbose, opts.dryRun);
+    });
+
   program.command('release-label-pr <prId>')
     .description('Figure out first release for PR and label it')
     .addOption(excludeCherriesOption)
@@ -142,15 +151,6 @@ export default function getCLI(context) {
             ...opts,
           });
         }
-      });
-
-    program.command('orglabel')
-      .description('Add an org label based on the author')
-      .addOption(issueOption)
-      .action(async function () {
-        const opts = context.processOptions(this, ['issue', 'repo']);
-        const github = new Github({ context, issueNumber: opts.issue });
-        await github.assignOrgLabel(opts.issue, opts.verbose, opts.dryRun);
       });
 
     program.command('bump-python')

@@ -20,20 +20,3 @@
 import getCLI from './cli.js';
 import Context from './context.js';
 import Github from './github.js';
-
-async function runCommandFromGithubAction(rawCommand) {
-  const context = new Context('GHA');
-  const cli = getCLI(context);
-  const github = new Github(context);
-
-  // Make rawCommand look like argv
-  const cmd = rawCommand.trim().replace('@supersetbot', 'supersetbot');
-  const args = context.parseArgs(cmd);
-
-  await cli.parseAsync(['node', ...args]);
-  const msg = await context.onDone();
-
-  github.createComment(msg);
-}
-
-export { runCommandFromGithubAction };
