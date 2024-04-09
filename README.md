@@ -14,15 +14,16 @@ utility that can be used in different contexts.
 
 ## Features
 
-```bash
+```
 $ use nvm 20
 $ npm i -g supersetbot
 $ supersetbot
+$ ./src/supersetbot
 Usage: supersetbot [options] [command]
 
 Options:
   -v, --verbose                      Output extra debugging information
-  -r, --repo <repo>                  The GitHub repo to use (ie: "apache/superset")
+  -r, --repo <repo>                  The GitHub repo to use (ie:"apache/superset")
   -d, --dry-run                      Run the command in dry-run mode
   -a, --actor <actor>                The actor
   -h, --help                         display help for command
@@ -30,11 +31,13 @@ Options:
 Commands:
   label [options] <label>            Add a label to an issue or PR
   unlabel [options] <label>          Remove a label from an issue or PR
+  orglabel [options]                 Add an org label based on the author
   release-label-pr [options] <prId>  Figure out first release for PR and label it
   version                            Prints supersetbot's version number
   release-label-prs [options]        Given a set of PRs, auto-release label them
   release-label [options] <release>  Figure out first release for PR and label it
-  orglabel [options]                 Add an org label based on the author
+  bump-python [options]              Submit PR(s) to bump python dependencies
   docker [options]                   Generates/run docker build commands use in CI
+  run <command>                      Run a command from Github Action
   help [command]                     display help for command
 ```

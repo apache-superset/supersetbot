@@ -2,8 +2,8 @@
   "name": "supersetbot",
   "version": "0.4.9",
   "description": "A bot for the Superset GitHub repo",
-  "type": "module",
   "main": "src/index.js",
+  "type": "module",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "eslint": "eslint",
@@ -23,7 +23,11 @@
     "toml": "^3.0.0"
   },
   "devDependencies": {
+    "@babel/cli": "^7.24.1",
+    "@babel/core": "^7.24.4",
+    "@babel/preset-env": "^7.24.4",
     "@jest/globals": "^29.7.0",
+    "babel-jest": "^29.7.0",
     "eslint": "^8.56.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-plugin-import": "^2.29.1",

@@ -111,3 +111,42 @@ export function shuffleArray(originalArray) {
   }
   return array;
 }
+
+export function parsePinnedRequirements(requirements) {
+  const lines = requirements
+    .split('\n')
+    .filter((line) => !line.startsWith('#')) // this removes comments at the top/bottom but not vias since they are indented
+    .filter((line) => !line.startsWith('-')) // this removes funky lines refing other files
+    .map((line) => line.trim().toLowerCase())
+    .filter((line) => !!line);
+
+  const depsObject = {};
+  let currentDep = null;
+
+  lines.forEach((line) => {
+    const depMatch = line.match(/^(.+)==/);
+    if (depMatch) {
+      currentDep = depMatch[1].trim();
+    } else {
+      const viaLib = line.replace('# via', '').trim().replace('#', '').trim();
+      if (viaLib) {
+        if (!depsObject[viaLib]) {
+          depsObject[viaLib] = [];
+        }
+        depsObject[viaLib].push(currentDep);
+      }
+    }
+  });
+
+  return depsObject;
+}
+
+export function mergeParsedRequirements(obj1, obj2) {
+  const keys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+  const merged = {};
+
+  keys.forEach((key) => {
+    merged[key] = [...new Set([...(obj1[key] || []), ...(obj2[key] || [])])];
+  });
+  return merged;
+}

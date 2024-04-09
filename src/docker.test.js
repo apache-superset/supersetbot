@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import * as dockerUtils from './docker.js';
 
 const SHA = '22e7c602b9aa321ec7e0df4bb0033048664dcdf0';
@@ -6,23 +7,14 @@ const OLD_REL = '2.1.0';
 const NEW_REL = '2.1.1';
 const REPO = 'apache/superset';
 
+jest.mock('./github.js', () => jest.fn().mockImplementation(() => NEW_REL));
+
 beforeEach(() => {
   process.env.TEST_ENV = 'true';
 });
 
 afterEach(() => {
   delete process.env.TEST_ENV;
-});
-
-describe('isLatestRelease', () => {
-  test.each([
-    ['2.1.0', false],
-    ['2.1.1', true],
-    ['1.0.0', false],
-    ['3.0.0', true],
-  ])('returns %s for release %s', (release, expectedBool) => {
-    expect(dockerUtils.isLatestRelease(release)).toBe(expectedBool);
-  });
 });
 
 describe('getDockerTags', () => {
@@ -34,6 +26,7 @@ describe('getDockerTags', () => {
       SHA,
       'pull_request',
       PR_ID,
+      false,
       [`${REPO}:22e7c60-arm`, `${REPO}:${SHA}-arm`, `${REPO}:pr-${PR_ID}-arm`],
     ],
     [
@@ -42,6 +35,7 @@ describe('getDockerTags', () => {
       SHA,
       'pull_request',
       PR_ID,
+      false,
       [`${REPO}:22e7c60-ci`, `${REPO}:${SHA}-ci`, `${REPO}:pr-${PR_ID}-ci`],
     ],
     [
@@ -50,6 +44,7 @@ describe('getDockerTags', () => {
       SHA,
       'pull_request',
       PR_ID,
+      false,
       [`${REPO}:22e7c60`, `${REPO}:${SHA}`, `${REPO}:pr-${PR_ID}`],
     ],
     [
@@ -58,6 +53,7 @@ describe('getDockerTags', () => {
       SHA,
       'pull_request',
       PR_ID,
+      false,
       [
         `${REPO}:22e7c60-dev-arm`,
         `${REPO}:${SHA}-dev-arm`,
@@ -70,6 +66,7 @@ describe('getDockerTags', () => {
       SHA,
       'pull_request',
       PR_ID,
+      false,
       [`${REPO}:22e7c60-dev`, `${REPO}:${SHA}-dev`, `${REPO}:pr-${PR_ID}-dev`],
     ],
     // old releases
@@ -79,6 +76,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       OLD_REL,
+      false,
       [`${REPO}:22e7c60-arm`, `${REPO}:${SHA}-arm`, `${REPO}:${OLD_REL}-arm`],
     ],
     [
@@ -87,6 +85,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       OLD_REL,
+      false,
       [`${REPO}:22e7c60`, `${REPO}:${SHA}`, `${REPO}:${OLD_REL}`],
     ],
     [
@@ -95,6 +94,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       OLD_REL,
+      false,
       [
         `${REPO}:22e7c60-dev-arm`,
         `${REPO}:${SHA}-dev-arm`,
@@ -107,6 +107,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       OLD_REL,
+      false,
       [`${REPO}:22e7c60-dev`, `${REPO}:${SHA}-dev`, `${REPO}:${OLD_REL}-dev`],
     ],
     // new releases
@@ -116,6 +117,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       NEW_REL,
+      false,
       [
         `${REPO}:22e7c60-arm`,
         `${REPO}:${SHA}-arm`,
@@ -129,6 +131,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       NEW_REL,
+      false,
       [`${REPO}:22e7c60`, `${REPO}:${SHA}`, `${REPO}:${NEW_REL}`, `${REPO}:latest`],
     ],
     [
@@ -137,6 +140,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       NEW_REL,
+      false,
       [
         `${REPO}:22e7c60-dev-arm`,
         `${REPO}:${SHA}-dev-arm`,
@@ -150,6 +154,7 @@ describe('getDockerTags', () => {
       SHA,
       'release',
       NEW_REL,
+      false,
       [
         `${REPO}:22e7c60-dev`,
         `${REPO}:${SHA}-dev`,
@@ -164,6 +169,7 @@ describe('getDockerTags', () => {
       SHA,
       'push',
       'master',
+      false,
       [`${REPO}:22e7c60-arm`, `${REPO}:${SHA}-arm`, `${REPO}:master-arm`],
     ],
     [
@@ -172,6 +178,7 @@ describe('getDockerTags', () => {
       SHA,
       'push',
       'master',
+      false,
       [`${REPO}:22e7c60`, `${REPO}:${SHA}`, `${REPO}:master`],
     ],
     [
@@ -180,6 +187,7 @@ describe('getDockerTags', () => {
       SHA,
       'push',
       'master',
+      false,
       [
         `${REPO}:22e7c60-dev-arm`,
         `${REPO}:${SHA}-dev-arm`,
@@ -192,12 +200,23 @@ describe('getDockerTags', () => {
       SHA,
       'push',
       'master',
+      false,
       [`${REPO}:22e7c60-dev`, `${REPO}:${SHA}-dev`, `${REPO}:master-dev`],
     ],
 
-  ])('returns expected tags', (preset, platforms, sha, buildContext, buildContextRef, expectedTags) => {
+    [
+      'lean',
+      ['linux/amd64'],
+      SHA,
+      'release',
+      '4.0.0',
+      true,
+      [`${REPO}:latest`, `${REPO}:4.0.0`],
+    ],
+
+  ])('returns expected tags', (preset, platforms, sha, buildContext, buildContextRef, forceLatest, expectedTags) => {
     const tags = dockerUtils.getDockerTags({
-      preset, platforms, sha, buildContext, buildContextRef,
+      preset, platforms, sha, buildContext, buildContextRef, latestRelease: NEW_REL, forceLatest,
     });
     expect(tags).toEqual(expect.arrayContaining(expectedTags));
   });
@@ -208,16 +227,14 @@ describe('getDockerCommand', () => {
     [
       'lean',
       ['linux/amd64'],
-      true,
       SHA,
       'push',
       'master',
-      ['--push', `-t ${REPO}:master `],
+      [`-t ${REPO}:master `],
     ],
     [
       'dev',
       ['linux/amd64'],
-      false,
       SHA,
       'push',
       'master',
@@ -227,15 +244,14 @@ describe('getDockerCommand', () => {
     [
       'lean',
       ['linux/arm64', 'linux/amd64'],
-      true,
       SHA,
       'push',
       'master',
       ['--platform linux/arm64,linux/amd64'],
     ],
-  ])('returns expected docker command', (preset, platform, isAuthenticated, sha, buildContext, buildContextRef, contains) => {
+  ])('returns expected docker command', (preset, platform, sha, buildContext, buildContextRef, contains) => {
     const cmd = dockerUtils.getDockerCommand({
-      preset, platform, isAuthenticated, sha, buildContext, buildContextRef,
+      preset, platform, sha, buildContext, buildContextRef, latestRelease: NEW_REL,
     });
     contains.forEach((expectedSubstring) => {
       expect(cmd).toContain(expectedSubstring);

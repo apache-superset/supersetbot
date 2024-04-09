@@ -32,22 +32,18 @@ function getBuildContextRef(buildContext) {
   return '';
 }
 
-export function isLatestRelease(release) {
-  const output = runCmd(`../../scripts/tag_latest_release.sh ${release} --dry-run`, false) || '';
-  return output.includes('SKIP_TAG::false');
-}
-
 function makeDockerTag(parts) {
   return `${REPO}:${parts.filter((part) => part).join('-')}`;
 }
 
 export function getDockerTags({
-  preset, platforms, sha, buildContext, buildContextRef, forceLatest = false,
+  preset, platforms, sha, buildContext, buildContextRef, forceLatest = false, latestRelease = null,
 }) {
   const tags = new Set();
   const tagChunks = [];
 
-  const isLatest = isLatestRelease(buildContextRef);
+  const currentRelease = buildContext === 'release' ? buildContextRef : null;
+  const isLatest = latestRelease === currentRelease;
 
   if (preset !== 'lean') {
     tagChunks.push(preset);
@@ -66,20 +62,22 @@ export function getDockerTags({
 
   if (buildContext === 'release') {
     tags.add(makeDockerTag([buildContextRef, ...tagChunks]));
-    if (isLatest || forceLatest) {
-      tags.add(makeDockerTag(['latest', ...tagChunks]));
-    }
   } else if (buildContext === 'push' && buildContextRef === 'master') {
     tags.add(makeDockerTag(['master', ...tagChunks]));
   } else if (buildContext === 'pull_request') {
     tags.add(makeDockerTag([`pr-${buildContextRef}`, ...tagChunks]));
+  }
+  if (isLatest || forceLatest) {
+    console.log(`Tags: ${[...tags].join(', ')}`);
+    tags.add(makeDockerTag(['latest', ...tagChunks]));
+    console.log("MAKE", makeDockerTag(['latest', ...tagChunks]));
   }
 
   return [...tags];
 }
 
 export function getDockerCommand({
-  preset, platform, buildContext, buildContextRef, forceLatest = false,
+  preset, platform, buildContext, buildContextRef, forceLatest = false, latestRelease = null,
 }) {
   const platforms = platform;
 
@@ -111,7 +109,7 @@ export function getDockerCommand({
   }
   const sha = getGitSha();
   const tags = getDockerTags({
-    preset, platforms, sha, buildContext, buildContextRef: ref, forceLatest,
+    preset, platforms, sha, buildContext, buildContextRef: ref, forceLatest, latestRelease,
   }).map((tag) => `-t ${tag}`).join(' \\\n        ');
   const isAuthenticated = !!(process.env.DOCKERHUB_TOKEN);
 
@@ -123,6 +121,7 @@ export function getDockerCommand({
   const cacheToArg = isAuthenticated ? `--cache-to=type=registry,mode=max,ref=${cacheRef}` : '';
   const buildArg = pyVer ? `--build-arg PY_VER=${pyVer}` : '';
   const actor = process.env.GITHUB_ACTOR;
+  const versionLabel = buildContext === 'release' ? `--label version=${buildContextRef}` : '';
 
   return `docker buildx build \\
       ${dockerArgs} \\
@@ -137,6 +136,7 @@ export function getDockerCommand({
       --label build_trigger=${ref} \\
       --label base=${pyVer} \\
       --label build_actor=${actor} \\
+      ${versionLabel} \\
       ${dockerContext}
   `;
 }

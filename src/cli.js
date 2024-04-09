@@ -158,6 +158,7 @@ export default function getCLI(context) {
       .option('-p, --python-package <pythonPackage>', 'name of the package to bump')
       .option('-g, --group <group>', 'specify a group of optional dependencies to bump')
       .option('-u, --use-current-repo', 'Uses the current repo instead of a temporary one')
+      .option('-s, --include-subpackages', 'Include subpackages bumps')
       .option('-l, --limit <limit>', 'Limit the number of PRs to create', null, parseInt)
       .action(async function () {
         const opts = context.processOptions(this, ['repo']);
@@ -177,10 +178,12 @@ export default function getCLI(context) {
       .option('-p, --platform <platform...>', 'Platforms (multiple values allowed)')
       .option('-f, --force-latest', 'Force the "latest" tag on the release')
       .option('-v, --verbose', 'Print more info')
-      .action(function () {
-        const opts = context.processOptions(this, ['preset']);
+      .action(async function () {
+        const opts = context.processOptions(this, ['preset', 'repo']);
         opts.platform = opts.platform || ['linux/arm64'];
-        const command = docker.getDockerCommand({ ...opts });
+        const github = new Github({ context });
+        const latestRelease = await github.getLatestReleaseTag();
+        const command = docker.getDockerCommand({ ...opts, latestRelease });
         context.log(command);
         if (!opts.dryRun) {
           utils.runShellCommand({ command, raiseOnError: false });
