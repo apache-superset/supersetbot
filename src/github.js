@@ -24,7 +24,7 @@ class Github {
     if (!githubToken) {
       const msg = 'GITHUB_TOKEN is not set';
       this.context.logError(msg);
-      this.context.exit(1);
+      //this.context.exit(1);
     }
     const throttledOctokit = Octokit.plugin(throttling);
     // eslint-disable-next-line new-cap
