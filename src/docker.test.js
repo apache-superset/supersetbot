@@ -250,7 +250,7 @@ describe('getDockerCommand', () => {
       ['--platform linux/arm64,linux/amd64'],
     ],
   ])('returns expected docker command', (preset, platform, sha, buildContext, buildContextRef, contains) => {
-    const cmd = dockerUtils.getDockerCommand({
+    const cmd = await dockerUtils.getDockerCommand({
       preset, platform, sha, buildContext, buildContextRef, latestRelease: NEW_REL,
     });
     contains.forEach((expectedSubstring) => {

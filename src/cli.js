@@ -183,7 +183,7 @@ export default function getCLI(context) {
         opts.platform = opts.platform || ['linux/arm64'];
         const github = new Github({ context });
         const latestRelease = await github.getLatestReleaseTag();
-        const command = docker.getDockerCommand({ ...opts, latestRelease });
+        const command = await docker.getDockerCommand({ ...opts, latestRelease });
         context.log(command);
         if (!opts.dryRun) {
           utils.runShellCommand({ command, raiseOnError: false });

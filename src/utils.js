@@ -42,7 +42,7 @@ export async function currentPackageVersion() {
 }
 
 export function runShellCommand({
-  command, raiseOnError = true, exitOnError = true, cwd = null, verbose = false, dryRun = false,
+  command, raiseOnError = true, exitOnError = true, cwd = null, dryRun = false,
 }) {
   return new Promise((resolve, reject) => {
     const args = command.split(/\s+/).filter((s) => !!s && s !== '\\');
@@ -68,16 +68,12 @@ export function runShellCommand({
     let stderr = '';
 
     child.stdout.on('data', (data) => {
-      if (verbose) {
-        console.log(data.toString());
-      }
+      console.log(data.toString());
       stdout += data.toString();
     });
 
     child.stderr.on('data', (data) => {
-      if (verbose) {
-        console.log(data.toString());
-      }
+      console.log(data.toString());
       stderr += data.toString();
     });
 

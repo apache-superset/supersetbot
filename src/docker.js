@@ -1,20 +1,12 @@
-import { spawnSync } from 'child_process';
+import * as utils from './utils.js';
 
 const REPO = 'apache/superset';
 const CACHE_REPO = `${REPO}-cache`;
 const BASE_PY_IMAGE = '3.10-slim-bookworm';
 
-export function runCmd(command, raiseOnFailure = true) {
-  const { stdout, stderr } = spawnSync(command, { shell: true, encoding: 'utf-8', env: process.env });
-
-  if (stderr && raiseOnFailure) {
-    throw new Error(stderr);
-  }
-  return stdout;
-}
-
-function getGitSha() {
-  return runCmd('git rev-parse HEAD').trim();
+async function getGitSha() {
+  const { stdout } = await utils.runShellCommand({ command: 'git rev-parse HEAD', raiseOnError: true });
+  return stdout.trim();
 }
 
 function getBuildContextRef(buildContext) {
@@ -76,7 +68,7 @@ export function getDockerTags({
   return [...tags];
 }
 
-export function getDockerCommand({
+export async function getDockerCommand({
   preset, platform, buildContext, buildContextRef, forceLatest = false, latestRelease = null,
 }) {
   const platforms = platform;
@@ -107,7 +99,7 @@ export function getDockerCommand({
   if (!ref) {
     ref = getBuildContextRef(buildContext);
   }
-  const sha = getGitSha();
+  const sha = await getGitSha();
   const tags = getDockerTags({
     preset, platforms, sha, buildContext, buildContextRef: ref, forceLatest, latestRelease,
   }).map((tag) => `-t ${tag}`).join(' \\\n        ');
