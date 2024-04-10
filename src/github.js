@@ -24,6 +24,7 @@ class Github {
     if (!githubToken) {
       const msg = 'GITHUB_TOKEN is not set';
       this.context.logError(msg);
+      this.context.exit(1);
     }
     const throttledOctokit = Octokit.plugin(throttling);
     // eslint-disable-next-line new-cap
@@ -326,8 +327,9 @@ class Github {
     const tomlFilePath = path.join(cwd, 'pyproject.toml');
 
     // Parse dependencies from pyproject.yml
+    let data;
     try {
-      const data = await fs.promises.readFile(tomlFilePath, 'utf8');
+      data = await fs.promises.readFile(tomlFilePath, 'utf8');
     } catch (error) {
       console.error('Error reading ./pyproject.toml');
       process.exit(1);
