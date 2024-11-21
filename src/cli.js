@@ -208,9 +208,15 @@ export default function getCLI(context) {
 
         // --------------------------------------------------------------------
         console.log("Building python-base layer first to reduce parallelism");
-        const tempOpts = { ...opts, preset: 'python-base' };
         command = await docker.getDockerCommand({
-          ...tempOpts, buildContext, buildContextRef, latestRelease, extraFlags,
+          ...{ ...opts, preset: 'python-base' }, buildContext, buildContextRef, latestRelease, extraFlags,
+        });
+        if (!opts.dryRun) {
+          await utils.runShellCommand({ command, raiseOnError: false });
+        }
+        console.log("Building superset-node layer first to reduce parallelism");
+        command = await docker.getDockerCommand({
+          ...{ ...opts, preset: 'superset-node' }, buildContext, buildContextRef, latestRelease, extraFlags,
         });
         if (!opts.dryRun) {
           await utils.runShellCommand({ command, raiseOnError: false });
