@@ -1,6 +1,6 @@
 {
   "name": "supersetbot",
-  "version": "0.5.16",
+  "version": "0.5.17",
   "description": "A bot for the Superset GitHub repo",
   "main": "src/index.js",
   "type": "module",
