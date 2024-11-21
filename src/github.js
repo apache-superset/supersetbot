@@ -317,7 +317,7 @@ class Github {
   async allDescendantPackages(parent) {
     const tree = await this.getSubPackageTree();
     let descendants = [];
-    for (const child of tree[parent] || []) {
+    for (const child of tree[parent].deps || []) {
       descendants = [...new Set([...descendants, ...(await this.allDescendantPackages(child))])];
     }
     return [parent, ...descendants];
