@@ -212,18 +212,16 @@ export default function getCLI(context) {
         command = await docker.getDockerCommand({
           ...tempOpts, buildContext, buildContextRef, latestRelease, extraFlags,
         });
-        context.log(command);
         if (!opts.dryRun) {
-          utils.runShellCommand({ command, raiseOnError: false });
+          await utils.runShellCommand({ command, raiseOnError: false });
         }
         // --------------------------------------------------------------------
 
         command = await docker.getDockerCommand({
           ...opts, buildContext, buildContextRef, latestRelease, extraFlags,
         });
-        context.log(command);
         if (!opts.dryRun) {
-          utils.runShellCommand({ command, raiseOnError: false });
+          await utils.runShellCommand({ command, raiseOnError: false });
         }
       });
   }
