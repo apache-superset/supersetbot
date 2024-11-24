@@ -449,7 +449,7 @@ class Github {
         }
         if (line.trim().startsWith('# -r ')) {
           // Replace everything before 'requirements/' with '# -r requirements/'
-          const fixedLine = line.replace(/# -r .*?requirements\//, '# -r requirements/');
+          const fixedLine = line.replace(/#\s+-r\s+.*?requirements\//, '# -r requirements/');
           if (fixedLine !== line) {
             needsUpdate = true;
             return fixedLine;
