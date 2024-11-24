@@ -204,31 +204,25 @@ export default function getCLI(context) {
         const { extraFlags } = opts;
         const latestRelease = await github.getLatestReleaseTag();
         console.log(`Latest release: ${latestRelease}`);
-        let command;
+
+        // Helper function to run Docker commands
+        async function runDockerCommand(preset) {
+          console.log(`Building ${preset || 'final'} layer`);
+          const command = await docker.getDockerCommand({
+            ...{ ...opts, preset }, buildContext, buildContextRef, latestRelease, extraFlags,
+          });
+          if (!opts.dryRun) {
+            await utils.runShellCommand({ command, raiseOnError: false });
+          } else {
+            console.log(`dry-run: ${command}`);
+          }
+        }
 
         // --------------------------------------------------------------------
-        console.log("Building python-base layer first to reduce parallelism");
-        command = await docker.getDockerCommand({
-          ...{ ...opts, preset: 'python-base' }, buildContext, buildContextRef, latestRelease, extraFlags,
-        });
-        if (!opts.dryRun) {
-          await utils.runShellCommand({ command, raiseOnError: false });
-        }
-        console.log("Building superset-node layer first to reduce parallelism");
-        command = await docker.getDockerCommand({
-          ...{ ...opts, preset: 'superset-node' }, buildContext, buildContextRef, latestRelease, extraFlags,
-        });
-        if (!opts.dryRun) {
-          await utils.runShellCommand({ command, raiseOnError: false });
-        }
+        await runDockerCommand('python-base');
+        await runDockerCommand('superset-node');
+        await runDockerCommand(opts.preset);
         // --------------------------------------------------------------------
-
-        command = await docker.getDockerCommand({
-          ...opts, buildContext, buildContextRef, latestRelease, extraFlags,
-        });
-        if (!opts.dryRun) {
-          await utils.runShellCommand({ command, raiseOnError: false });
-        }
       });
   }
 

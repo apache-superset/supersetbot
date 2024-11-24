@@ -62,7 +62,6 @@ export function runShellCommand({
       resolve({ stdout: '', stderr: '' });
       return;
     }
-
     const child = spawn(args.shift(), args, spawnOptions);
     let stdout = '';
     let stderr = '';

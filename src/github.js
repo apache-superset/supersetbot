@@ -435,8 +435,7 @@ class Github {
   }
 
   async fixReqsFile(filePath) {
-    // Somehow pip-compile-multi generates replaces the '-e file:.' with a hard-coded local path
-    // hoping they fix it in the future. In the meantime we can fix it here.
+    // Fixes '-e file:.' lines and strips absolute paths before 'requirements/' in '# -r' lines
     try {
       // Read the file
       const content = await fs.promises.readFile(filePath, { encoding: 'utf-8' });
@@ -448,10 +447,18 @@ class Github {
           needsUpdate = true;
           return '-e file:.';
         }
+        if (line.trim().startsWith('# -r ')) {
+          // Replace everything before 'requirements/' with '# -r requirements/'
+          const fixedLine = line.replace(/# -r .*?requirements\//, '# -r requirements/');
+          if (fixedLine !== line) {
+            needsUpdate = true;
+            return fixedLine;
+          }
+        }
         return line;
       });
 
-      // Join the lines back and write to the file
+      // Join the lines back and write to the file if any changes were made
       if (needsUpdate) {
         await fs.promises.writeFile(filePath, updatedLines.join('\n'), { encoding: 'utf-8' });
       }
