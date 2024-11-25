@@ -447,14 +447,14 @@ class Github {
           needsUpdate = true;
           return '-e file:.';
         }
-        if (line.trim().startsWith('# -r ')) {
-          // Replace everything before 'requirements/' with '# -r requirements/'
-          const fixedLine = line.replace(/#\s+-r\s+\S*requirements\//, '# -r requirements/');
+        if (/^\s*#\s*-r\s+\S*requirements\//.test(line)) {
+            // Replace everything before 'requirements/' with '# -r requirements/'
+            const fixedLine = line.replace(/#\s*-r\s+\S*requirements\//, '# -r requirements/');
 
-          if (fixedLine !== line) {
-            needsUpdate = true;
-            return fixedLine;
-          }
+            if (fixedLine !== line) {
+                needsUpdate = true;
+                return fixedLine;
+            }
         }
         return line;
       });
