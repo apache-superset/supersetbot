@@ -122,6 +122,7 @@ export function parsePinnedRequirementsTree(requirements) {
     .map((line) => line.trim().toLowerCase())
     .filter((line) => !line.startsWith('# via -r ')) // this removes funky lines refing other files
     .filter((line) => !line.startsWith('-e ')) // this removes funky lines refing other files
+    .filter((line) => !line.includes('-r ')) // this removes funky lines refing other files
     .filter((line) => !!line); // this removes empty lines
 
   const depsObject = {};
