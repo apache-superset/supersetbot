@@ -219,7 +219,6 @@ export default function getCLI(context) {
         }
 
         // --------------------------------------------------------------------
-        await runDockerCommand('python-base');
         await runDockerCommand('superset-node');
         await runDockerCommand(opts.preset);
         // --------------------------------------------------------------------
