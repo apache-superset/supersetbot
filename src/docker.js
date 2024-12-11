@@ -118,8 +118,8 @@ export async function getDockerCommand({
   const targetArgument = buildTarget ? `--target ${buildTarget}` : '';
   const cacheRef = `${CACHE_REPO}:${pyVer}`;
   const platformArg = `--platform ${platforms.join(',')}`;
-  const cacheFromArg = `--cache-from=type=registry,ref=${cacheRef} --cache-from=type=local,src=~/.docker/buildx/cache`;
-  const cacheToArg = isAuthenticated ? `--cache-to=type=registry,mode=max,ref=${cacheRef}` : '' + ' --cache-to=type=local,dest=~/.docker/buildx/cache';
+  const cacheFromArg = `--cache-from=type=registry,ref=${cacheRef}`;
+  const cacheToArg = isAuthenticated ? `--cache-to=type=registry,mode=max,ref=${cacheRef}` : '';
   const buildArg = pyVer ? `--build-arg PY_VER=${pyVer}` : '';
   const actor = process.env.GITHUB_ACTOR;
   const versionLabel = buildContext === 'release' ? `--label version=${buildContextRef}` : '';
