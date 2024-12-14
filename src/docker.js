@@ -114,7 +114,7 @@ export async function getDockerCommand({
   }).map((tag) => `-t ${tag}`).join(' \\\n        ');
   const isAuthenticated = !!(process.env.DOCKERHUB_TOKEN);
 
-  const dockerArgs = isAuthenticated ? '--push' : '--load';
+  const dockerArgs = isAuthenticated ? '--push --load' : '--load';
   const targetArgument = buildTarget ? `--target ${buildTarget}` : '';
   const cacheRef = `${CACHE_REPO}:${pyVer}`;
   const platformArg = `--platform ${platforms.join(',')}`;
