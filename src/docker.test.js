@@ -12,6 +12,7 @@ jest.mock('./github.js', () => jest.fn().mockImplementation(() => NEW_REL));
 beforeEach(() => {
   process.env.TEST_ENV = 'true';
   process.env.DOCKERHUB_TOKEN = 'dummy';
+  process.env.GITHUB_RUN_ID= '123';
 });
 
 afterEach(() => {
@@ -68,7 +69,7 @@ describe('getDockerTags', () => {
       'pull_request',
       PR_ID,
       false,
-      [`${REPO}:22e7c60-dev`, `${REPO}:${SHA}-dev`, `${REPO}:pr-${PR_ID}-dev`],
+      [`${REPO}:22e7c60-dev`, `${REPO}:${SHA}-dev`, `${REPO}:pr-${PR_ID}-dev`, `${REPO}:GHA-123`],
     ],
     // old releases
     [

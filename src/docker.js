@@ -65,6 +65,10 @@ export function getDockerTags({
     tags.add(makeDockerTag(['latest', ...tagChunks]));
     console.log('MAKE', makeDockerTag(['latest', ...tagChunks]));
   }
+  if (process.env.GITHUB_RUN_ID) {
+    tags.add(makeDockerTag([`GHA-${process.env.GITHUB_RUN_ID}`]));
+  }
+
 
   return [...tags];
 }
