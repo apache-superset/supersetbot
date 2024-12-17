@@ -11,6 +11,7 @@ jest.mock('./github.js', () => jest.fn().mockImplementation(() => NEW_REL));
 
 beforeEach(() => {
   process.env.TEST_ENV = 'true';
+  process.env.DOCKERHUB_TOKEN = 'dummy';
 });
 
 afterEach(() => {
@@ -240,7 +241,7 @@ describe('getDockerCommand', () => {
       'push',
       'master',
       '',
-      ['--load', `-t ${REPO}:master-dev `],
+      ['--push', `-t ${REPO}:master-dev `],
     ],
     [
       'dev',

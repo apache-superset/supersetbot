@@ -193,6 +193,8 @@ export default function getCLI(context) {
       .option('-r, --context-ref <ref>', 'Reference to the PR, release, or branch')
       .option('-p, --platform <platform...>', 'Platforms (multiple values allowed)')
       .option('-f, --force-latest', 'Force the "latest" tag on the release')
+      .option('-l, --load', 'Whether to --load the image after building')
+      .option('-u, --push', 'Whether to --push the image after building')
       .option('-x, --extra-flags <extraFlags>', 'Pass a extra flags to the docker build command')
       .option('-v, --verbose', 'Print more info')
       .action(async function () {
@@ -219,7 +221,6 @@ export default function getCLI(context) {
         }
 
         // --------------------------------------------------------------------
-        // await runDockerCommand('superset-node');
         await runDockerCommand(opts.preset);
         // --------------------------------------------------------------------
       });
