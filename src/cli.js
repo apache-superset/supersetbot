@@ -188,7 +188,7 @@ export default function getCLI(context) {
 
     program.command('docker')
       .description('Generates/run docker build commands use in CI')
-      .option('-t, --preset <preset>', 'Build preset', /^(lean|dev|dockerize|websocket|py310|ci|py311)$/i, 'lean')
+      .option('-t, --preset <preset>', 'Build preset', /^(lean|dev|dockerize|python-base|superset-node|superset-node-ci|websocket|py310|ci|py311)$/i, 'lean')
       .option('-c, --context <context>', 'Build context', /^(push|pull_request|release)$/i, 'local')
       .option('-r, --context-ref <ref>', 'Reference to the PR, release, or branch')
       .option('-p, --platform <platform...>', 'Platforms (multiple values allowed)')

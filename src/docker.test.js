@@ -12,7 +12,7 @@ jest.mock('./github.js', () => jest.fn().mockImplementation(() => NEW_REL));
 beforeEach(() => {
   process.env.TEST_ENV = 'true';
   process.env.DOCKERHUB_TOKEN = 'dummy';
-  process.env.GITHUB_RUN_ID= '123';
+  process.env.GITHUB_RUN_ID = '123';
 });
 
 afterEach(() => {

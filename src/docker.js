@@ -69,7 +69,6 @@ export function getDockerTags({
     tags.add(makeDockerTag([`GHA-${process.env.GITHUB_RUN_ID}`]));
   }
 
-
   return [...tags];
 }
 
@@ -120,7 +119,7 @@ export async function getDockerCommand({
   }).map((tag) => `-t ${tag}`).join(' \\\n        ');
   const isAuthenticated = !!(process.env.DOCKERHUB_TOKEN);
 
-  let dockerArgs = "";
+  let dockerArgs = '';
   dockerArgs += push || isAuthenticated ? ' --push ' : '';
   dockerArgs += load ? ' --load ' : '';
   const targetArgument = buildTarget ? `--target ${buildTarget}` : '';
