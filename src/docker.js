@@ -94,6 +94,8 @@ export async function getDockerCommand({
     buildTarget = 'python-base';
   } else if (preset === 'superset-node') {
     buildTarget = 'superset-node';
+  } else if (preset === 'superset-node-ci') {
+    buildTarget = 'superset-node-ci';
   } else if (preset === 'py311') {
     buildTarget = 'lean';
     pyVer = '3.11-slim-bookworm';
