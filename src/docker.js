@@ -121,6 +121,8 @@ export async function getDockerCommand({
 
   let dockerArgs = '';
   dockerArgs += push || isAuthenticated ? ' --push ' : '';
+  // Always push for now to fix prod issue
+  dockerArgs +=' --push ';
   dockerArgs += load ? ' --load ' : '';
   const targetArgument = buildTarget ? `--target ${buildTarget}` : '';
   const cacheRef = `${CACHE_REPO}:${pyVer}`;
