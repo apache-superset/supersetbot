@@ -242,7 +242,7 @@ describe('getDockerCommand', () => {
       'push',
       'master',
       '',
-      ['--push', `-t ${REPO}:master-dev `],
+      [`-t ${REPO}:master-dev `],
     ],
     [
       'dev',
