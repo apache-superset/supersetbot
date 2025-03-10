@@ -505,10 +505,10 @@ class Github {
       pythonPackages = await this.allDescendantPackages(pythonPackage);
     }
     console.log('Packages to bump', pythonPackages);
-    // Run pip-compile-multi
+    // Upgrade pacakge
     for (const lib of pythonPackages) {
       try {
-        await runShellCommand({ command: `pip-compile-multi --use-cache -P ${lib}`, ...shellOptions });
+        await runShellCommand({ command: `./scripts/uv-pip-compile.sh -P ${lib}`, ...shellOptions });
       } catch (error) {
         console.error(`Error bumping "${lib}":`, error);
       }
