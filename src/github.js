@@ -356,7 +356,7 @@ class Github {
       if (onlyBase) {
         deps = [];
         for (const k in tree) {
-          if (tree[k].vias.includes('apache-superset')) {
+          if (tree[k].vias.includes('apache-superset (pyproject.toml)')) {
             deps.push(k);
           }
         }

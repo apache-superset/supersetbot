@@ -157,7 +157,6 @@ export function parsePinnedRequirementsTree(requirements) {
       }
     }
   });
-  console.log('Parsed requirements:', depsObject);
   return depsObject;
 }
 
