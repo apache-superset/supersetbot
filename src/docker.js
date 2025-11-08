@@ -2,7 +2,7 @@ import * as utils from './utils.js';
 
 const REPO = 'apache/superset';
 const CACHE_REPO = `${REPO}-cache`;
-const BASE_PY_IMAGE = '3.10-slim-bookworm';
+const BASE_PY_IMAGE = '3.10-slim-trixie';
 
 async function getGitSha() {
   const { stdout } = await utils.runShellCommand({ command: 'git rev-parse HEAD', raiseOnError: true });
@@ -88,7 +88,7 @@ export async function getDockerCommand({
     buildTarget = 'lean';
   } else if (preset === 'py310') {
     buildTarget = 'lean';
-    pyVer = '3.10-slim-bookworm';
+    pyVer = '3.10-slim-trixie';
   } else if (preset === 'python-base') {
     buildTarget = 'python-base';
   } else if (preset === 'superset-node') {
@@ -97,10 +97,10 @@ export async function getDockerCommand({
     buildTarget = 'superset-node-ci';
   } else if (preset === 'py311') {
     buildTarget = 'lean';
-    pyVer = '3.11-slim-bookworm';
+    pyVer = '3.11-slim-trixie';
   } else if (preset === 'py312') {
     buildTarget = 'lean';
-    pyVer = '3.12-slim-bookworm';
+    pyVer = '3.12-slim-trixie';
   } else if (preset === 'websocket') {
     dockerContext = 'superset-websocket';
   } else if (preset === 'ci') {
