@@ -72,12 +72,15 @@ export function getDockerTags({
   return [...tags];
 }
 
-export async function getDockerCommand({
-  preset, platform, buildContext, buildContextRef, forceLatest = false, latestRelease = null,
-  extraFlags = '', push, load,
-}) {
-  const platforms = platform;
+// Presets that are built from this repo's root Dockerfile and therefore
+// share real ancestor stages (notably superset-node-ci/superset-node, which
+// don't even depend on PY_VER). These are the only presets that gain any
+// cache-sharing benefit from being built together via `bake` rather than as
+// separate `docker buildx build` invocations; websocket/dockerize use their
+// own, unrelated Dockerfiles.
+export const DEFAULT_BAKE_PRESETS = ['dev', 'lean', 'py311', 'py312'];
 
+export function resolvePresetConfig(preset) {
   let buildTarget = '';
   let pyVer = BASE_PY_IMAGE;
   let dockerContext = '.';
@@ -111,6 +114,76 @@ export async function getDockerCommand({
     console.error(`Invalid build preset: ${preset}`);
     process.exit(1);
   }
+
+  return { buildTarget, pyVer, dockerContext };
+}
+
+// `resolvePresetConfig`'s dockerContext is a shell-ready fragment for the
+// `docker buildx build` CLI (e.g. "-f dockerize.Dockerfile ."), which has no
+// direct equivalent field in a bake file. Bake wants `context` and
+// `dockerfile` as separate keys, so split it back apart here.
+function splitDockerContext(dockerContext) {
+  const dockerizeStyle = dockerContext.match(/^-f\s+(\S+)\s+(.+)$/);
+  if (dockerizeStyle) {
+    return { context: dockerizeStyle[2], dockerfile: dockerizeStyle[1] };
+  }
+  return { context: dockerContext };
+}
+
+export async function getBakeFile({
+  presets = DEFAULT_BAKE_PRESETS, platform, buildContext, buildContextRef,
+  forceLatest = false, latestRelease = null,
+}) {
+  const platforms = platform;
+  let ref = buildContextRef;
+  if (!ref) {
+    ref = getBuildContextRef(buildContext);
+  }
+  const sha = await getGitSha();
+  const isAuthenticated = !!(process.env.DOCKERHUB_TOKEN);
+  const actor = process.env.GITHUB_ACTOR;
+
+  const target = {};
+  presets.forEach((preset) => {
+    const { buildTarget, pyVer, dockerContext } = resolvePresetConfig(preset);
+    const { context: dockerCtx, dockerfile } = splitDockerContext(dockerContext);
+    const tags = getDockerTags({
+      preset, platforms, sha, buildContext, buildContextRef: ref, forceLatest, latestRelease,
+    });
+    const cacheRef = `${CACHE_REPO}:${pyVer}`;
+
+    target[preset] = {
+      context: dockerCtx,
+      ...(dockerfile ? { dockerfile } : {}),
+      ...(buildTarget ? { target: buildTarget } : {}),
+      args: { PY_VER: pyVer },
+      tags,
+      'cache-from': [`type=registry,ref=${cacheRef}`],
+      ...(isAuthenticated ? { 'cache-to': [`type=registry,mode=max,ref=${cacheRef}`] } : {}),
+      platforms,
+      labels: {
+        sha,
+        target: buildTarget,
+        build_trigger: ref,
+        base: pyVer,
+        ...(actor ? { build_actor: actor } : {}),
+        ...(buildContext === 'release' ? { version: ref } : {}),
+      },
+    };
+  });
+
+  return {
+    group: { default: { targets: presets } },
+    target,
+  };
+}
+
+export async function getDockerCommand({
+  preset, platform, buildContext, buildContextRef, forceLatest = false, latestRelease = null,
+  extraFlags = '', push, load,
+}) {
+  const platforms = platform;
+  const { buildTarget, pyVer, dockerContext } = resolvePresetConfig(preset);
 
   let ref = buildContextRef;
   if (!ref) {

@@ -272,3 +272,68 @@ describe('getDockerCommand', () => {
     });
   });
 });
+
+describe('getBakeFile', () => {
+  test('defaults to the four presets that actually share the Dockerfile', async () => {
+    const bakeFile = await dockerUtils.getBakeFile({
+      platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    expect(Object.keys(bakeFile.target)).toEqual(['dev', 'lean', 'py311', 'py312']);
+    expect(bakeFile.group.default.targets).toEqual(['dev', 'lean', 'py311', 'py312']);
+  });
+
+  test('py311 and py312 no longer collide with lean: distinct PY_VER, tags, and cache refs', async () => {
+    const bakeFile = await dockerUtils.getBakeFile({
+      platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    const { lean, py311, py312 } = bakeFile.target;
+
+    expect(lean.args.PY_VER).toBe('3.10-slim-bookworm');
+    expect(py311.args.PY_VER).toBe('3.11-slim-bookworm');
+    expect(py312.args.PY_VER).toBe('3.12-slim-bookworm');
+
+    // Same build target (both build the "lean" stage)...
+    expect(py311.target).toBe('lean');
+    expect(py312.target).toBe('lean');
+    // ...but distinct tags and cache refs, since they pin a different PY_VER.
+    expect(py311.tags).not.toEqual(lean.tags);
+    expect(py312.tags).not.toEqual(lean.tags);
+    expect(py311['cache-from']).not.toEqual(lean['cache-from']);
+    expect(py312['cache-from']).not.toEqual(py311['cache-from']);
+  });
+
+  test('every target shares context "." (the shared Dockerfile) by default', async () => {
+    const bakeFile = await dockerUtils.getBakeFile({
+      platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    Object.values(bakeFile.target).forEach((target) => {
+      expect(target.context).toBe('.');
+      expect(target.dockerfile).toBeUndefined();
+    });
+  });
+
+  test('splits the dockerize preset\'s "-f dockerize.Dockerfile ." into context/dockerfile', async () => {
+    const bakeFile = await dockerUtils.getBakeFile({
+      presets: ['dockerize'], platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    expect(bakeFile.target.dockerize.context).toBe('.');
+    expect(bakeFile.target.dockerize.dockerfile).toBe('dockerize.Dockerfile');
+  });
+
+  test('websocket preset uses its own directory as context, default Dockerfile name', async () => {
+    const bakeFile = await dockerUtils.getBakeFile({
+      presets: ['websocket'], platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    expect(bakeFile.target.websocket.context).toBe('superset-websocket');
+    expect(bakeFile.target.websocket.dockerfile).toBeUndefined();
+  });
+
+  test('omits cache-to (no push credentials) when DOCKERHUB_TOKEN is unset', async () => {
+    delete process.env.DOCKERHUB_TOKEN;
+    const bakeFile = await dockerUtils.getBakeFile({
+      presets: ['lean'], platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    expect(bakeFile.target.lean['cache-to']).toBeUndefined();
+    process.env.DOCKERHUB_TOKEN = 'dummy';
+  });
+});
