@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import fs from 'node:fs';
 import { Command, Option } from 'commander';
 
 import * as docker from './docker.js';
@@ -223,6 +224,52 @@ export default function getCLI(context) {
         // --------------------------------------------------------------------
         await runDockerCommand(opts.preset);
         // --------------------------------------------------------------------
+      });
+
+    program.command('bake')
+      .description('Generates/runs a docker buildx bake file covering multiple build presets in one invocation, so presets that share a Dockerfile also share a build (only dev/lean/py311/py312 currently do; see docker.getBakeFile)')
+      .option('-t, --presets <presets...>', 'Build presets to include (multiple values allowed)')
+      .option('-c, --context <context>', 'Build context', /^(push|pull_request|release)$/i, 'local')
+      .option('-r, --context-ref <ref>', 'Reference to the PR, release, or branch')
+      .option('-p, --platform <platform...>', 'Platforms (multiple values allowed)')
+      .option('-f, --force-latest', 'Force the "latest" tag on the release')
+      .option('-l, --load', 'Whether to --load the images after building')
+      .option('-u, --push', 'Whether to --push the images after building')
+      .option('-o, --output <file>', 'Where to write the generated bake file', 'docker-bake.generated.json')
+      .option('-v, --verbose', 'Print more info')
+      .action(async function () {
+        const opts = context.processOptions(this, ['repo']);
+        opts.presets = opts.presets || docker.DEFAULT_BAKE_PRESETS;
+        opts.platform = opts.platform || ['linux/amd64'];
+        const github = new Github({ context });
+        const buildContext = opts.context;
+        const buildContextRef = opts.contextRef;
+        const latestRelease = await github.getLatestReleaseTag();
+        console.log(`Latest release: ${latestRelease}`);
+
+        const bakeFile = await docker.getBakeFile({
+          presets: opts.presets,
+          platform: opts.platform,
+          buildContext,
+          buildContextRef,
+          forceLatest: opts.forceLatest,
+          latestRelease,
+        });
+        fs.writeFileSync(opts.output, JSON.stringify(bakeFile, null, 2));
+        console.log(`Wrote bake file to ${opts.output} covering: ${opts.presets.join(', ')}`);
+
+        let pushOrLoad = '';
+        if (opts.push) {
+          pushOrLoad = '--push';
+        } else if (opts.load) {
+          pushOrLoad = '--load';
+        }
+        const command = `docker buildx bake -f ${opts.output} ${pushOrLoad}`.trim();
+        if (!opts.dryRun) {
+          await utils.runShellCommand({ command, raiseOnError: false });
+        } else {
+          console.log(`dry-run: ${command}`);
+        }
       });
   }
 
