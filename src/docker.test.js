@@ -245,6 +245,18 @@ describe('getDockerTags', () => {
       [`${REPO}:${NEW_REL}-lean`, `${REPO}:latest-lean`],
     ],
 
+    // real release/master builds are multi-platform, published as a single
+    // multi-arch manifest under the plain tag (no per-arch suffix at all)
+    [
+      'superset',
+      ['linux/arm64', 'linux/amd64'],
+      SHA,
+      'push',
+      'master',
+      false,
+      [`${REPO}:22e7c60`, `${REPO}:${SHA}`, `${REPO}:master`],
+    ],
+
   ])('returns expected tags', (preset, platforms, sha, buildContext, buildContextRef, forceLatest, expectedTags) => {
     const tags = dockerUtils.getDockerTags({
       preset, platforms, sha, buildContext, buildContextRef, latestRelease: NEW_REL, forceLatest,
