@@ -38,7 +38,7 @@ export function getDockerTags({
     ? utils.compareSemVer(latestRelease, currentRelease) >= 0
     : false;
 
-  if (preset !== 'lean') {
+  if (preset !== 'superset') {
     tagChunks.push(preset);
   }
 
@@ -82,7 +82,9 @@ export async function getDockerCommand({
   let pyVer = BASE_PY_IMAGE;
   let dockerContext = '.';
 
-  if (preset === 'dev') {
+  if (preset === 'superset') {
+    buildTarget = 'superset';
+  } else if (preset === 'dev') {
     buildTarget = 'dev';
   } else if (preset === 'lean') {
     buildTarget = 'lean';
