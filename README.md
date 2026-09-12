@@ -192,6 +192,51 @@ npm test -- --coverage
 
 Test files follow the `*.test.js` naming convention and are colocated with source files.
 
+## Releasing
+
+Day-to-day development happens on `main`. Releases are cut from the `0.5`
+branch, which periodically merges `main` in and carries the actual version
+bump commits/tags.
+
+Publishing to npm is automated via GitHub Actions using npm's
+[Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC) - no
+`NPM_TOKEN` secret involved. Pushing a bare-semver tag (e.g. `0.5.46`, no
+`v` prefix - see `.npmrc`'s `tag-version-prefix=`) triggers
+[`.github/workflows/publish.yml`](.github/workflows/publish.yml), which
+requires manual approval (mistercrunch or rusackas, via the `npm-publish`
+GitHub Environment) before it actually runs `npm publish`.
+
+To cut a release:
+
+```bash
+# 1. Bring the release branch up to date with main
+git checkout 0.5
+git pull origin 0.5
+git merge origin/main
+
+# 2. Bump the version - creates a commit + a matching bare-semver tag
+#    (patch/minor/major as appropriate; this repo has stayed on patch
+#    bumps for the whole 0.5.x line so far)
+npm version patch
+
+# 3. Push the branch and the new tag
+git push origin 0.5
+git push origin --tags
+```
+
+Then approve the resulting workflow run under the repo's **Actions** tab
+(it'll be waiting on the `npm-publish` environment). Once approved, it
+publishes automatically. Verify with:
+
+```bash
+npm view supersetbot version
+```
+
+If npm's Trusted Publisher config ever needs to change (workflow filename,
+environment name, etc.), note that npm does not allow editing it in place -
+delete the connection under the package's **Settings > Trusted Publisher**
+on npmjs.com and recreate it.
+
 ## Contributing
 
 1. Fork the repository
