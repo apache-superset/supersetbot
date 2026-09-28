@@ -114,6 +114,25 @@ supersetbot docker --preset dev --platform linux/amd64 linux/arm64
 supersetbot docker --preset lean --push --context release --context-ref v3.0.0
 ```
 
+**Generate and run a docker buildx bake file**
+
+Builds multiple presets in one `docker buildx bake` invocation instead of one
+`docker buildx build` per preset. Only worth it for presets that actually
+share a Dockerfile (`dev`/`lean`/`py311`/`py312` by default); presets with
+their own Dockerfile (`websocket`, `dockerize`) don't gain a cache-sharing
+benefit from being bundled in, though they can still be included for
+convenience.
+```bash
+# Bake the default presets (dev, lean, py311, py312)
+supersetbot bake --platform linux/amd64
+
+# Bake a specific set of presets
+supersetbot bake --presets dev lean --platform linux/amd64
+
+# Write the bake file without building anything
+supersetbot bake --dry-run
+```
+
 #### Utility Commands
 
 **Get version**
