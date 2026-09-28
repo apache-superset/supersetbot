@@ -338,9 +338,9 @@ describe('getBakeFile', () => {
     });
     const { lean, py311, py312 } = bakeFile.target;
 
-    expect(lean.args.PY_VER).toBe('3.10-slim-bookworm');
-    expect(py311.args.PY_VER).toBe('3.11-slim-bookworm');
-    expect(py312.args.PY_VER).toBe('3.12-slim-bookworm');
+    expect(lean.args.PY_VER).toBe('3.10-slim-trixie');
+    expect(py311.args.PY_VER).toBe('3.11-slim-trixie');
+    expect(py312.args.PY_VER).toBe('3.12-slim-trixie');
 
     // Same build target (both build the "lean" stage)...
     expect(py311.target).toBe('lean');
