@@ -23,7 +23,7 @@ describe('getDockerTags', () => {
   test.each([
     // PRs
     [
-      'lean',
+      'superset',
       ['linux/arm64'],
       SHA,
       'pull_request',
@@ -41,7 +41,7 @@ describe('getDockerTags', () => {
       [`${REPO}:22e7c60-ci`, `${REPO}:${SHA}-ci`, `${REPO}:pr-${PR_ID}-ci`],
     ],
     [
-      'lean',
+      'superset',
       ['linux/amd64'],
       SHA,
       'pull_request',
@@ -73,7 +73,7 @@ describe('getDockerTags', () => {
     ],
     // old releases
     [
-      'lean',
+      'superset',
       ['linux/arm64'],
       SHA,
       'release',
@@ -82,7 +82,7 @@ describe('getDockerTags', () => {
       [`${REPO}:22e7c60-arm`, `${REPO}:${SHA}-arm`, `${REPO}:${OLD_REL}-arm`],
     ],
     [
-      'lean',
+      'superset',
       ['linux/amd64'],
       SHA,
       'release',
@@ -114,7 +114,7 @@ describe('getDockerTags', () => {
     ],
     // new releases
     [
-      'lean',
+      'superset',
       ['linux/arm64'],
       SHA,
       'release',
@@ -128,7 +128,7 @@ describe('getDockerTags', () => {
       ],
     ],
     [
-      'lean',
+      'superset',
       ['linux/amd64'],
       SHA,
       'release',
@@ -166,7 +166,7 @@ describe('getDockerTags', () => {
     ],
     // merge on master
     [
-      'lean',
+      'superset',
       ['linux/arm64'],
       SHA,
       'push',
@@ -175,7 +175,7 @@ describe('getDockerTags', () => {
       [`${REPO}:22e7c60-arm`, `${REPO}:${SHA}-arm`, `${REPO}:master-arm`],
     ],
     [
-      'lean',
+      'superset',
       ['linux/amd64'],
       SHA,
       'push',
@@ -207,13 +207,54 @@ describe('getDockerTags', () => {
     ],
 
     [
-      'lean',
+      'superset',
       ['linux/amd64'],
       SHA,
       'release',
       '4.0.0',
       true,
       [`${REPO}:latest`, `${REPO}:4.0.0`],
+    ],
+
+    // lean now gets a `-lean` suffix, like every other non-`superset` preset
+    [
+      'lean',
+      ['linux/amd64'],
+      SHA,
+      'push',
+      'master',
+      false,
+      [`${REPO}:22e7c60-lean`, `${REPO}:${SHA}-lean`, `${REPO}:master-lean`],
+    ],
+    [
+      'lean',
+      ['linux/arm64'],
+      SHA,
+      'push',
+      'master',
+      false,
+      [`${REPO}:22e7c60-lean-arm`, `${REPO}:${SHA}-lean-arm`, `${REPO}:master-lean-arm`],
+    ],
+    [
+      'lean',
+      ['linux/amd64'],
+      SHA,
+      'release',
+      NEW_REL,
+      false,
+      [`${REPO}:${NEW_REL}-lean`, `${REPO}:latest-lean`],
+    ],
+
+    // real release/master builds are multi-platform, published as a single
+    // multi-arch manifest under the plain tag (no per-arch suffix at all)
+    [
+      'superset',
+      ['linux/arm64', 'linux/amd64'],
+      SHA,
+      'push',
+      'master',
+      false,
+      [`${REPO}:22e7c60`, `${REPO}:${SHA}`, `${REPO}:master`],
     ],
 
   ])('returns expected tags', (preset, platforms, sha, buildContext, buildContextRef, forceLatest, expectedTags) => {
@@ -227,13 +268,22 @@ describe('getDockerTags', () => {
 describe('getDockerCommand', () => {
   test.each([
     [
+      'superset',
+      ['linux/amd64'],
+      SHA,
+      'push',
+      'master',
+      '',
+      ['--target superset', `-t ${REPO}:master `],
+    ],
+    [
       'lean',
       ['linux/amd64'],
       SHA,
       'push',
       'master',
       '',
-      [`-t ${REPO}:master `],
+      ['--target lean', `-t ${REPO}:master-lean `],
     ],
     [
       'dev',
@@ -270,5 +320,70 @@ describe('getDockerCommand', () => {
     contains.forEach((expectedSubstring) => {
       expect(cmd).toContain(expectedSubstring);
     });
+  });
+});
+
+describe('getBakeFile', () => {
+  test('defaults to the four presets that actually share the Dockerfile', async () => {
+    const bakeFile = await dockerUtils.getBakeFile({
+      platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    expect(Object.keys(bakeFile.target)).toEqual(['dev', 'lean', 'py311', 'py312']);
+    expect(bakeFile.group.default.targets).toEqual(['dev', 'lean', 'py311', 'py312']);
+  });
+
+  test('py311 and py312 no longer collide with lean: distinct PY_VER, tags, and cache refs', async () => {
+    const bakeFile = await dockerUtils.getBakeFile({
+      platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    const { lean, py311, py312 } = bakeFile.target;
+
+    expect(lean.args.PY_VER).toBe('3.10-slim-bookworm');
+    expect(py311.args.PY_VER).toBe('3.11-slim-bookworm');
+    expect(py312.args.PY_VER).toBe('3.12-slim-bookworm');
+
+    // Same build target (both build the "lean" stage)...
+    expect(py311.target).toBe('lean');
+    expect(py312.target).toBe('lean');
+    // ...but distinct tags and cache refs, since they pin a different PY_VER.
+    expect(py311.tags).not.toEqual(lean.tags);
+    expect(py312.tags).not.toEqual(lean.tags);
+    expect(py311['cache-from']).not.toEqual(lean['cache-from']);
+    expect(py312['cache-from']).not.toEqual(py311['cache-from']);
+  });
+
+  test('every target shares context "." (the shared Dockerfile) by default', async () => {
+    const bakeFile = await dockerUtils.getBakeFile({
+      platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    Object.values(bakeFile.target).forEach((target) => {
+      expect(target.context).toBe('.');
+      expect(target.dockerfile).toBeUndefined();
+    });
+  });
+
+  test('splits the dockerize preset\'s "-f dockerize.Dockerfile ." into context/dockerfile', async () => {
+    const bakeFile = await dockerUtils.getBakeFile({
+      presets: ['dockerize'], platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    expect(bakeFile.target.dockerize.context).toBe('.');
+    expect(bakeFile.target.dockerize.dockerfile).toBe('dockerize.Dockerfile');
+  });
+
+  test('websocket preset uses its own directory as context, default Dockerfile name', async () => {
+    const bakeFile = await dockerUtils.getBakeFile({
+      presets: ['websocket'], platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    expect(bakeFile.target.websocket.context).toBe('superset-websocket');
+    expect(bakeFile.target.websocket.dockerfile).toBeUndefined();
+  });
+
+  test('omits cache-to (no push credentials) when DOCKERHUB_TOKEN is unset', async () => {
+    delete process.env.DOCKERHUB_TOKEN;
+    const bakeFile = await dockerUtils.getBakeFile({
+      presets: ['lean'], platform: ['linux/amd64'], buildContext: 'push', buildContextRef: 'master', latestRelease: NEW_REL,
+    });
+    expect(bakeFile.target.lean['cache-to']).toBeUndefined();
+    process.env.DOCKERHUB_TOKEN = 'dummy';
   });
 });

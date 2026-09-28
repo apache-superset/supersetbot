@@ -1,0 +1,46 @@
+name: Publish to npm
+
+# Publishes to npm via Trusted Publishing (OIDC) whenever a bare-semver tag
+# (e.g. `0.5.46`, created by `npm version patch` on the 0.5 branch) is pushed.
+# No NPM_TOKEN secret needed - npm exchanges this workflow's OIDC token for a
+# short-lived publish credential, scoped to exactly this repo + workflow
+# file + environment, as configured on the package's npm Trusted Publisher
+# settings (npmjs.com > supersetbot > Settings > Trusted Publisher).
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    # Requires manual approval (mistercrunch or rusackas) before running -
+    # see the npm-publish environment's protection rules in repo settings.
+    environment: npm-publish
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Ensure npm supports OIDC trusted publishing
+        run: npm install -g npm@latest
+
+      - run: npm ci
+
+      - name: Verify tag matches package.json version
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$GITHUB_REF_NAME" != "$PKG_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+      - run: npm publish
